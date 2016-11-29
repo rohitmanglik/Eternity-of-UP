@@ -2,6 +2,12 @@ import scrapy
 from bs4 import BeautifulSoup
 import csv
 
+def UTF8 (data):
+	try:
+		return data.encode('utf-8', 'ignore')
+	except:
+		return data
+
 class UrbanSpider(scrapy.Spider):
 	name = "parse_main"
 
@@ -10,9 +16,26 @@ class UrbanSpider(scrapy.Spider):
 	]
 
 	def parse(self, response):
-		with open('urbanpro.csv','a') as f:
-			fieldnames = ['name', 'profileContent', 'locality', 'region', 'country', 'postalCode', 'aboutUs', 'galleryImage', 'classesConducted', 'image', 'reviews']
-			writer = csv.DictWriter(f, fieldnames=fieldnames, dialect=csv.excel)
+		print "Scrapping Urbanpro, please wait..."
+
+		with open('urbanpro.csv', 'w') as f:
+			fieldnames = [
+				'Image',
+				'Name',
+				'featured',
+				'Location',
+				'Region',
+				'Country',
+				'Pincode',
+				'About Us',
+				'Category',
+				'Gallery',
+				'Details',
+				'Information',
+				'Reviews'
+			]
+
+			writer = csv.DictWriter(f,fieldnames=fieldnames, dialect=csv.excel)
 			writer.writeheader()
 
 		categories = response.css('div.shdwPart a::attr(href)').extract()
@@ -25,8 +48,22 @@ class UrbanSpider(scrapy.Spider):
 			if flag == 1:
 				filename = var.strip() + '.csv'
 				filename = filename.lower()
-				with open(filename, 'a') as f:
-					fieldnames = ['name', 'profileContent', 'locality', 'region', 'country', 'postalCode', 'aboutUs', 'galleryImage', 'classesConducted', 'image', 'reviews']
+				with open(filename, 'w') as f:
+					fieldnames = [
+						'Image',
+						'Name',
+						'featured',
+						'Location',
+						'Region',
+						'Country',
+						'Pincode',
+						'About Us',
+						'Category',
+						'Gallery',
+						'Details',
+						'Information',
+						'Reviews'
+					]
 					writer = csv.DictWriter(f, fieldnames=fieldnames, dialect=csv.excel)
 					writer.writeheader()
 			elif var == unicode('All Categories'):
@@ -122,103 +159,137 @@ class UrbanSpider(scrapy.Spider):
 				inp=input()
 
 	def parse_members(self, response):
-		def extract_with_css(query):
-			return response.css(query).extract_first().strip().encode('utf-8').replace("\n","").replace("\t","")
+		#stores image of the tutor
+		tutor_image = response.css('div.profileImageHeader img::attr(src)').extract_first().strip()
+		tutor_image = UTF8(tutor_image)
 
-		image = extract_with_css('div.profileImageHeader img::attr(src)')
-		name = extract_with_css('div.rightProfileHead h1::text')
-		try:
-			profileContent = extract_with_css('div.profileContentTxt::text')
-			profileContent = profileContent.replace("\t","").replace("\n","").replace(" ","")
+		#stores name of the tutor
+		tutor_name = response.css('div.rightProfileHead h1::text').extract_first().strip()
+		tutor_name = UTF8(tutor_name)
+		#check if featured or not
+		try:	
+			featured = response.css('span.membershipTag ::text').extract_first().strip()
+			featured = 'YES'
 		except:
-			profileContent = None
-			print "\n\ndiv.profileContentTxt::text\n\n",response,"\n\n"
-			#inp=input()
-		try:
-			locality = extract_with_css('span.locality::text')
-			locality = locality.replace("\t","").replace("\n","").replace(" ","")
-		except:
-			locality = None
-			print "\n\nspan.locality::text\n\n",response,"\n\n"
-			#inp=input()
+			featured = 'NO'
 
-		try:
-			region = extract_with_css('span.region::text')
-			region = region.replace("\t","").replace("\n","").replace(" ","")
-			filename = region.encode('utf-8') + '.csv'
-			filename = filename.lower()
-		except:
-			region = None
-			print "\n\nspan.region.txt\n\n",response,"\n\n"
-			#inp=input()
-		try:
-			country = response.xpath('//span[@class="country-name."]/text()').extract_first().replace(" ","").replace("\n","").replace("\t","")
-		except:
-			country = None
-			print "\n\ncountry not found\n\n",response,"\n\n"
-			#inp=input()
-		try:
-			postalCode = extract_with_css('span.postal-code::text')
-		except:
-			postalCode = None
-			print "\n\npostalCode Not found\n\n",response,"\n\n"
-			#inp=input()
-		try:
-			aboutUs = extract_with_css('div.description_txt::text')
-			aboutUs = aboutUs.replace("\t","").replace("\n","").replace(" ","")
-		except:
-			aboutUs = None
-			print "\n\naboutUs not found\n\n",response,"\n\n"
-			#inp=input()
-		
-		try:
-			galleryImage = []
-			galleryImage = galleryImage + response.css('div.galleryContainer a::attr(href)').extract()
-			for e, var in enumerate(galleryImage):
-				galleryImage[e] = var.strip().decode('utf-8','ignore').encode('utf-8')
-				galleryImage[e] = var.replace("\t","").replace("\n","").replace(" ","")
+		#get location of tutor
+		tutor_location = response.css('span.locality ::text').extract_first().strip()
+		tutor_location = UTF8(tutor_location.replace('\n',' ').replace('\t',' '))
 
-		except:
-			galleryImage = [None]
-			print "\n\ngalleryImage Not found\n\n",response,"\n\n"
-			#inp=input()
+		#get region of tutor
+		tutor_region = response.css('span.region ::text').extract_first().strip()
+		tutor_region = UTF8 (tutor_region.replace('\n',' ').replace('\t',' '))
 
-		try:
-			classesConducted = []
-			classesConducted = response.css('span.categText::text').extract()
-			for e, var in enumerate(classesConducted):
-				classesConducted[e] = var.strip().encode('utf-8').replace("\n","").replace("\t","").replace(" ","")
-		except:
-			classesConducted =[None]
-			print "\n\nclasses not found\n\n",response,"\n\n"
-			#inp=input()
-
-		
-		try:
-			review = response.css('div.reviewContainer').extract()
-			reviews = []
-
-			for var in review:
-				soup = BeautifulSoup(var, 'html.parser')
-				reviews.append(soup.get_text().strip().replace("\t","").replace("\n",""))
-		except:
-			print "\n\nreviews\n\n",response,"\n\n"
-			#inp=input()
-
-			
+		#get country-name of tutor
+		tutor_country = response.xpath('//span[@class="country-name."]/text()').extract_first().strip()
+		tutor_country = UTF8(tutor_country)
 
 
+		#get pincode of tutor
+		tutor_pincode = response.css('span.postal-code ::text').extract_first().strip()
+		tutor_pincode = UTF8 (tutor_pincode)
+
+		#get aboutUs Section of tutor
+		tutor_aboutUs = response.css('div.description_txt ::text').extract_first().strip()
+		tutor_aboutUs = UTF8(tutor_aboutUs)
+	
+		#get categories of tutor
+		tutor_categ = []
+		tutor_categ = response.css('span.categText::text').extract()
+		for i, temp in enumerate(tutor_categ):
+			tutor_categ[i] = UTF8(temp.strip().replace(' ','').replace('\n',''))
+	
+		#get gallery start_urls
+		tutor_gallery = []
+		tutor_gallery = response.css('div.galleryHolder a::attr(href)').extract()
+		for i, temp in enumerate(tutor_gallery):
+			tutor_gallery[i] = UTF8(temp.strip().replace(' ','').replace('\n',''))
+	
+
+		#for profile_details
+		tutor_details = response.css('div.profileContentTxt p::text').extract_first().strip()
+		tutor_details = UTF8(tutor_details)
+	
+
+		#for more information
+		tutor_info = response.css('div.profileContentTxt p ::text').extract_first().strip()
+		tutor_info = UTF8(tutor_info.replace('\n','').replace('\t','').replace('\r',''))
+	
+
+		#for reviews
+		temp = response.css('p.reviewContent::text').extract()
+		tutor_reviews = []
+		for i in range(1,len(temp),2):
+			tutor_reviews.append(UTF8(temp[i].strip().replace('\n','').replace('\t','').replace('\r','')))
+	
+		city = tutor_region.lower().replace(' ','').replace('\t','').replace('\n','')
+		filename = city+".csv"
 
 		with open(filename, 'a') as csvfile:
-			fieldnames = ['name', 'profileContent','locality','region','country','postalCode','aboutUs', 'galleryImage', 'classesConducted', 'image', 'reviews']
+			fieldnames = [
+							'Image',
+							'Name',
+							'featured',
+							'Location',
+							'Region',
+							'Country',
+							'Pincode',
+							'About Us',
+							'Category',
+							'Gallery',
+							'Details',
+							'Information',
+							'Reviews'
+						]			
 			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, dialect=csv.excel)
-			writer.writerow({'name': name, 'profileContent': profileContent, 'locality': locality, 'region': region, 'country': country, 'postalCode': postalCode, 'aboutUs': aboutUs, 'galleryImage': galleryImage, 'classesConducted': classesConducted, 'image': image, 'reviews':reviews})
-
+			writer.writerow({
+				'Image': tutor_image,
+				'Name':tutor_name,
+				'featured':featured,
+				'Location': tutor_location,
+				'Region' : tutor_region,
+				'Country' : tutor_country,
+				'Pincode': tutor_pincode,
+				'About Us': tutor_aboutUs,
+				'Category': tutor_categ,
+				'Gallery': tutor_gallery,
+				'Details': tutor_details,
+				'Information': tutor_info,
+				'Reviews': tutor_reviews
+				})
 		with open('urbanpro.csv', 'a') as csvfile:
-			fieldnames = ['name', 'profileContent','locality','region','country','postalCode','aboutUs', 'galleryImage', 'classesConducted', 'image', 'reviews']
+			fieldnames = [
+							'Image',
+							'Name',
+							'featured',
+							'Location',
+							'Region',
+							'Country',
+							'Pincode',
+							'About Us',
+							'Category',
+							'Gallery',
+							'Details',
+							'Information',
+							'Reviews'
+						]		
 			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, dialect=csv.excel)
-			writer.writerow({'name': name, 'profileContent': profileContent, 'locality': locality, 'region': region, 'country': country, 'postalCode': postalCode, 'aboutUs': aboutUs, 'galleryImage': galleryImage, 'classesConducted': classesConducted, 'image': image, 'reviews':reviews})
-
+			writer.writerow({
+				'Image': tutor_image,
+				'Name':tutor_name,
+				'featured':featured,
+				'Location': tutor_location,
+				'Region' : tutor_region,
+				'Country' : tutor_country,
+				'Pincode': tutor_pincode,
+				'About Us': tutor_aboutUs,
+				'Category': tutor_categ,
+				'Gallery': tutor_gallery,
+				'Details': tutor_details,
+				'Information': tutor_info,
+				'Reviews': tutor_reviews
+				})
 
 	def parse_school(self, response):
 		def extract_with_css(query):

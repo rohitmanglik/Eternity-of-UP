@@ -78,23 +78,37 @@ class UrbanSpider(scrapy.Spider):
 	
 	def parse_categories_schools(self, response):
 		
-		print "inside parse_categories_schools: ",response,"\n\n"
+		#print "inside parse_categories_schools: ",response,"\n\n"
 
-		members = response.css('div.listing-image-box a::attr(href)').extract()
-		print "members previous: ",members,"\n\n"
+		#members = response.css('div.listing-image-box a::attr(href)').extract()
+		#print "members previous: ",members,"\n\n"
 		members = response.css('div.schoolDataContainer a::attr(href)').extract()
-		print "members new: ",members,"\n\n"
+		#print "members new: ",members,"\n\n"
 		for i in members:
 			yield scrapy.Request(response.urljoin(i),callback=self.parse_school)
 
 		members = response.css('div.alsoSeeSchools a::attr(href)').extract()
-		print "Also see schools: ",members,"\n\n"
+		#print "Also see schools: ",members,"\n\n"
 		for i in members:
-			yield scrapy.Request(response.urljoin(i), callback=self.parse_categories_schools)
+			yield scrapy.Request(response.urljoin(i), callback=self.parse_categories_schools_alsoSee)
+
+	def parse_categories_schools_alsoSee(self, response):
+		
+		#print "inside parse_categories_schools: ",response,"\n\n"
+
+		#members = response.css('div.listing-image-box a::attr(href)').extract()
+		#print "members previous: ",members,"\n\n"
+		members = response.css('div.schoolDataContainer a::attr(href)').extract()
+		#print "members new: ",members,"\n\n"
+		for i in members:
+			yield scrapy.Request(response.urljoin(i),callback=self.parse_school)
+
 
 
 
 	def parse_school (self, response):
+		print "School: ",response,"\n\n"
+
 		logo = response.css('div.schoolLogo img::attr(src)').extract_first()
 		logo = UTF8(logo.strip().replace(' ','').replace('\n','').replace('\t',''))
 	

@@ -162,7 +162,7 @@ class UrbanSpider(scrapy.Spider):
 			]
 
 			writer = csv.DictWriter(csvfile, fieldnames=fieldnames, dialect=csv.excel)
-			writer.writeheader()
+			
 			writer.writerow({
 				'Logo': logo,
 				'Name': name,

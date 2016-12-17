@@ -149,7 +149,7 @@ class UrbanSpider(scrapy.Spider):
 		for i in temp:
 			review.append(UTF8(i.strip().replace('\n','').replace('\t','')))
 
-		with open('school.csv', 'w') as csvfile:
+		with open('school.csv', 'a') as csvfile:
 			fieldnames = [
 				'Logo',
 				'Name',

@@ -78,8 +78,8 @@ class UrbanSpider(scrapy.Spider):
 				try:
 					yield scrapy.Request(response.urljoin(var), callback=self.parse_city)
 				except:
-					print "\n\n",var,"\n\n"
-					inp=input()
+					print "\n\nError: ",var,"\n\n"
+					#inp=input()
 			elif var == unicode('/all-categories'):
 				flag = 1
 				all_categories = response.urljoin(var)
@@ -133,8 +133,7 @@ class UrbanSpider(scrapy.Spider):
 
 	def parse_category(self, response):
 
-		print "tutors: ",response,"\n\n"
-
+		
 		members = response.css('div.listing-image-box a::attr(href)').extract()
 
 		for member in members:
@@ -143,7 +142,7 @@ class UrbanSpider(scrapy.Spider):
 				yield scrapy.Request(responding, callback=self.parse_members)
 			except:
 				print "\nfailed:\n",responding,"\n\n"
-				inp=input()
+				#inp=input()
 
 		try:
 			members = response.css('#nearLocality li a::attr(href)').extract()
@@ -168,12 +167,20 @@ class UrbanSpider(scrapy.Spider):
 					yield scrapy.Request(responding, callback=self.parse_members)
 				except:
 					print "\nfailed:\n",responding,"\n\n"
-					inp = input()
+					#inp = input()
 		except:
 			print "no nearByCityInSEOFooter"
 
 
 	def parse_members(self, response):
+		
+		try:
+			yield scrapy.Request(response, callback=self.parse_category)
+		except:
+			blank = 5
+
+		print "\n\ntutor: ",response,"\n\n"
+
 		#stores image of the tutor
 		tutor_image = response.css('div.profileImageHeader img::attr(src)').extract_first().strip()
 		tutor_image = UTF8(tutor_image)
